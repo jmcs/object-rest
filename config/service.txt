@@ -1,0 +1,9 @@
+GET /test
+    You can document the service and use the documentation file as a config file for object_rest
+
+POST /test
+    GET is the default for /test because it appears first
+
+POST /test/abc
+    Method documentation starts with a line with the method and path followed by lines started with
+    whitespace with a description
