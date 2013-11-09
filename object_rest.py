@@ -82,17 +82,22 @@ class Service(Node):
         #todo: catch errors
         config = defaultdict(list)
         with open(fname) as cfg_file:
-                for line in cfg_file:
+                for i, line in enumerate(cfg_file):
+                    if i == 0 and line.startswith('URL:'):
+                        _, url = line.split(':', maxsplit=1)
+                        config['URL'] = url.strip()
+                        continue
                     if not line or line[0].isspace():
                         continue
                     method, url = line.split()
                     config[url].append(method)
         return config
 
-    def __init__(self, url, documentation=None):
+    def __init__(self, url=None, documentation=None):
         #todo: allow defining only the documentation and extract the url from it
         session = requests.Session()
         session.headers = {'user-agent': 'object_rest.py', }
         doc = Service.__parse_documentation(documentation) if documentation else {}
+        url = url if url else doc['URL']
         super(Service, self).__init__(url, requests.Session(), doc)
 
