@@ -14,17 +14,17 @@ class Node(object):
     def __getattr__(self, name):
         """
         Get child node as attribute.
-        For example abc.def would correspond to the url abc/def
+        For example abc.def would correspond to the URLS abc/def.
+        An '_' prefix can be used to access some URLs that would be otherwise be invalid like
+        numbers.
 
         :param name: Node name
         :type name: str
         :return: Node
         :rtype: Node
         """
-        if name not in self.__children:
-            child_url = "{base_url}/{name}".format(base_url=self.__url, name=name)
-            self.__children[name] = Node(child_url, self.__session, self.__documentation)
-        return self.__children[name]
+        name = name.lstrip('_')
+        return self.__get_child(name)
 
     def __setitem__(self, key, value):
         """
@@ -38,14 +38,14 @@ class Node(object):
     def __getitem__(self, name):
         """
         Access child node using dict like syntax for node names that can't be fetched as an
-        attribute like numbers or reserved attributes like __method
+        attribute like numbers, names with dots or reserved attributes like __method
 
         :param name: Node name
         :type name: str
         :return: Node
         :rtype: Node
         """
-        return self.__getattr__(name)
+        return self.__get_child(name)
 
     def __setattr__(self, key, value):
         """
@@ -81,6 +81,22 @@ class Node(object):
             return json.loads(response.content.decode('utf-8'))
         except ValueError:
             return response.text
+
+    def __get_child(self, name):
+        """
+        Get child node as attribute.
+        For example abc.def would correspond to the url abc/def
+
+        :param name: Node name
+        :type name: str
+        :return: Node
+        :rtype: Node
+        """
+
+        if name not in self.__children:
+            child_url = "{base_url}/{name}".format(base_url=self.__url, name=name)
+            self.__children[name] = Node(child_url, self.__session, self.__documentation)
+        return self.__children[name]
 
 
 class Service(Node):
