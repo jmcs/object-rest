@@ -136,5 +136,9 @@ class Service(Node):
         session.headers = {'user-agent': 'object_rest.py', }
         doc = Service.__parse_documentation(documentation) if documentation else {}
         url = url if url else doc['URL']
+        if not url:
+            raise TypeError('No URL defined')
         super(Service, self).__init__(url, requests.Session(), doc)
 
+#TODO: Add documentation to the method (implies replacing simple method in the list with a dict)
+#TODO: Optional parts of the url on documentation (like reddit API)
