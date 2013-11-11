@@ -26,10 +26,19 @@ class Node(object):
             self.__children[name] = Node(child_url, self.__session, self.__documentation)
         return self.__children[name]
 
+    def __setitem__(self, key, value):
+        """
+        PUT on child node with a dict syntax
+
+        :param key: Child name
+        :param value: Value to store
+        """
+        self.__setattr__(key, value)
+
     def __getitem__(self, name):
         """
         Access child node using dict like syntax for node names that can't be fetched as an
-        attribute like numbers or reserved attributes likes __method
+        attribute like numbers or reserved attributes like __method
 
         :param name: Node name
         :type name: str
@@ -49,8 +58,7 @@ class Node(object):
         :return: None
         """
 
-        #todo add __set_key__
-        if key.startswith('_'):
+        if key.startswith('_Node__'):  # if it's a private variable
             self.__dict__[key] = value
         else:
             child_url = "{base_url}/{name}".format(base_url=self.__url, name=key)
