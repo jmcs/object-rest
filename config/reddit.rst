@@ -1,4 +1,4 @@
-URL:http://api.reddit.com
+:URL: http://api.reddit.com
 
 POST /api/login
     Log into an account.

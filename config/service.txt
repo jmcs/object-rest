@@ -1,4 +1,4 @@
-URL:http://127.0.0.1:5000
+:URL: http://127.0.0.1:5000
 
 GET /test
     You can document the service and use the documentation file as a config file for object_rest

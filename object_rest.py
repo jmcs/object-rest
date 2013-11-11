@@ -119,11 +119,12 @@ class Service(Node):
     def __parse_documentation(fname):
         #todo: catch errors
         config = defaultdict(list)
+        config['PARAMS'] = dict()  # The params key is a special case for service configuration
         with open(fname) as cfg_file:
-            for i, line in enumerate(cfg_file):
-                if i == 0 and line.startswith('URL:'):
-                    _, url = line.split(':', maxsplit=1)
-                    config['URL'] = url.strip()
+            for line in cfg_file:
+                if line.startswith(':'):  # it's a parameter
+                    key, value = line[1:].split(':', maxsplit=1)
+                    config['PARAMS'][key] = value.strip()
                     continue
                 if not line or line[0].isspace():
                     continue
@@ -135,10 +136,11 @@ class Service(Node):
         session = requests.Session()
         session.headers = {'user-agent': 'object_rest.py', }
         doc = Service.__parse_documentation(documentation) if documentation else {}
-        url = url if url else doc['URL']
-        if not url:
+        try:
+            url = url if url else doc['PARAMS']['URL']
+        except KeyError:
             raise TypeError('No URL defined')
         super(Service, self).__init__(url, requests.Session(), doc)
 
-#TODO: Add documentation to the method (implies replacing simple method in the list with a dict)
-#TODO: Optional parts of the url on documentation (like reddit API)
+        #TODO: Add documentation to the method (implies replacing simple method in the list with a dict)
+        #TODO: Optional parts of the url on documentation (like reddit API)
