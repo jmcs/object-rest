@@ -58,7 +58,8 @@ class Node(object):
         :type value: dict
         :return: None
         """
-        key = key.lstrip('_')
+        if not key.startswith('_Node__'):
+            key = key.lstrip('_')
         self.__put(key, value)
 
     def __call__(self, __method=None, **kwargs):
@@ -114,25 +115,23 @@ class Node(object):
 
 
 class Service(Node):
-
     @staticmethod
     def __parse_documentation(fname):
         #todo: catch errors
         config = defaultdict(list)
         with open(fname) as cfg_file:
-                for i, line in enumerate(cfg_file):
-                    if i == 0 and line.startswith('URL:'):
-                        _, url = line.split(':', maxsplit=1)
-                        config['URL'] = url.strip()
-                        continue
-                    if not line or line[0].isspace():
-                        continue
-                    method, url = line.split()
-                    config[url].append(method)
+            for i, line in enumerate(cfg_file):
+                if i == 0 and line.startswith('URL:'):
+                    _, url = line.split(':', maxsplit=1)
+                    config['URL'] = url.strip()
+                    continue
+                if not line or line[0].isspace():
+                    continue
+                method, url = line.split()
+                config[url].append(method)
         return config
 
     def __init__(self, url=None, documentation=None):
-        #todo: allow defining only the documentation and extract the url from it
         session = requests.Session()
         session.headers = {'user-agent': 'object_rest.py', }
         doc = Service.__parse_documentation(documentation) if documentation else {}
