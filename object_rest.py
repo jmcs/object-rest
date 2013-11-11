@@ -1,16 +1,76 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import requests
 import json
 import urllib.parse
 
 
+class Documentation(object):
+    """
+    Object to hold all the service documentation
+    """
+
+    page = namedtuple('page', ['methods', 'description'])
+
+    def __init__(self, fname=None):
+        self.config = dict()  # Service Documentation
+        self.params = dict()  # General service configuration
+        self.__default_page = self.page(methods=['GET'], description='')
+        if fname:
+            self.parse(fname)
+
+    def __getitem__(self, path):
+        """
+        Returns documentation for path, with helpful defaults.
+
+        :param item: Path
+        :return: Documentation for path
+        :rtype: namedtuple
+        """
+        if path not in self.config:
+            return self.__default_page
+        else:
+            values = self.config[path]
+            page = self.page(**values)
+            return page
+
+    def parse(self, fname):
+        if not fname:
+            #If there is no config file return with empty config
+            return
+        with open(fname) as cfg_file:
+            for line in cfg_file:
+                if not line:  # if line is empty we can ignore it
+                    continue
+                if line.startswith(':'):  # it's a parameter
+                    key, value = line[1:].split(':', maxsplit=1)
+                    self.params[key] = value.strip()
+                    continue
+                if not line[0].isspace():  # if the first char isn't whitespace then it should
+                                           # be rule
+                    method, url = line.split()
+                    if url not in self.config:
+                        self.config[url] = self.new_page()
+                    self.config[url]['methods'].append(method)
+                else:
+                    continue
+
+    def new_page(self):
+        page = dict()
+        page['methods'] = list()
+        page['description'] = ''
+        return page
+
 class Node(object):
     def __init__(self, url, session=None, documentation={}):
+        self.__children = dict()
         self.__url = url
         self.__session = session
         self.__path = urllib.parse.urlparse(url).path
-        self.__documentation = documentation
-        self.__children = dict()
+
+        #Documentation related stuff
+        self.__documentation = documentation  # full_documentation
+        self.__doc_page = documentation[self.__path]  # 'page' relative to this path
+        self.__default_method = self.__doc_page.methods[0]
 
     def __getattr__(self, name):
         """
@@ -63,18 +123,18 @@ class Node(object):
         self.__put(key, value)
 
     def __call__(self, __method=None, **kwargs):
-        #When the method isn't specified
-        if not __method:
-            if self.__path in self.__documentation:
-                #When not specified we use the first documented method
-                __method = self.__documentation[self.__path][0]
-            else:
-                __method = "GET"
+
+        # if method is not specified use the default from the documentation file
+        # or GET if it's not documented
+        __method = __method if __method else self.__default_method
+
         if __method == "GET":
             method = self.__session.get
         elif __method == "POST":
             method = self.__session.post
+
         response = method(self.__url, params=kwargs)
+
         try:
             return json.loads(response.content.decode('utf-8'))
         except ValueError:
@@ -115,32 +175,18 @@ class Node(object):
 
 
 class Service(Node):
-    @staticmethod
-    def __parse_documentation(fname):
-        #todo: catch errors
-        config = defaultdict(list)
-        config['PARAMS'] = dict()  # The params key is a special case for service configuration
-        with open(fname) as cfg_file:
-            for line in cfg_file:
-                if line.startswith(':'):  # it's a parameter
-                    key, value = line[1:].split(':', maxsplit=1)
-                    config['PARAMS'][key] = value.strip()
-                    continue
-                if not line or line[0].isspace():
-                    continue
-                method, url = line.split()
-                config[url].append(method)
-        return config
 
     def __init__(self, url=None, documentation=None):
         session = requests.Session()
         session.headers = {'user-agent': 'object_rest.py', }
-        doc = Service.__parse_documentation(documentation) if documentation else {}
+        doc = Documentation(documentation)
         try:
-            url = url if url else doc['PARAMS']['URL']
+            url = url if url else doc.params['URL']
         except KeyError:
             raise TypeError('No URL defined')
         super(Service, self).__init__(url, requests.Session(), doc)
 
-        #TODO: Add documentation to the method (implies replacing simple method in the list with a dict)
-        #TODO: Optional parts of the url on documentation (like reddit API)
+
+#TODO: Documentation singleton
+#TODO: Add documentation to the method (implies replacing simple method in the list with a dict)
+#TODO: Optional parts of the url on documentation (like reddit API)
