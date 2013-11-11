@@ -3,6 +3,7 @@ import requests
 import json
 import urllib.parse
 
+
 class Node(object):
     def __init__(self, url, session=None, documentation={}):
         self.__url = url
@@ -33,7 +34,7 @@ class Node(object):
         :param key: Child name
         :param value: Value to store
         """
-        self.__setattr__(key, value)
+        self.__put(key, value)
 
     def __getitem__(self, name):
         """
@@ -49,7 +50,7 @@ class Node(object):
 
     def __setattr__(self, key, value):
         """
-        Put object
+        PUT on key by attribute
 
         :param key: Node name
         :type key: str
@@ -57,12 +58,8 @@ class Node(object):
         :type value: dict
         :return: None
         """
-
-        if key.startswith('_Node__'):  # if it's a private variable
-            self.__dict__[key] = value
-        else:
-            child_url = "{base_url}/{name}".format(base_url=self.__url, name=key)
-            self.__session.put(child_url, params=value)
+        key = key.lstrip('_')
+        self.__put(key, value)
 
     def __call__(self, __method=None, **kwargs):
         #When the method isn't specified
@@ -97,6 +94,23 @@ class Node(object):
             child_url = "{base_url}/{name}".format(base_url=self.__url, name=name)
             self.__children[name] = Node(child_url, self.__session, self.__documentation)
         return self.__children[name]
+
+    def __put(self, key, value):
+        """
+        Send PUT request to key with value
+
+        :param key: Node name
+        :type key: str
+        :param value: Object Value
+        :type value: dict
+        :return: None
+        """
+
+        if key.startswith('_Node__'):  # if it's a private variable
+            self.__dict__[key] = value
+        else:
+            child_url = "{base_url}/{name}".format(base_url=self.__url, name=key)
+            self.__session.put(child_url, params=value)
 
 
 class Service(Node):

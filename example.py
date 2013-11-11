@@ -16,3 +16,4 @@ print(local_with_config.test())
 print(local_with_config.test.abc())
 print(local_with_config.without())
 print(local_with_config.answers._42())
+local_with_config.questions.objective_of_universe = {'answer': 42}
