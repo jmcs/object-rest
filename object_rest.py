@@ -1,20 +1,32 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import requests
 import json
 import urllib.parse
 
+
+class Page(object):
+    #todo move nametuple and dict to this object
+    def __init__(self):
+        self.methods = []
+        self.description = ''
+
+    @property
+    def default_method(self):
+        """
+        Returns first defined access method if present on configuration or 'GET' otherwise
+        :return: Default method
+        :rtype: str
+        """
+        return self.methods[0] if self.methods else 'GET'
 
 class Documentation(object):
     """
     Object to hold all the service documentation
     """
 
-    page = namedtuple('page', ['methods', 'description'])
-
     def __init__(self, fname=None):
-        self.config = dict()  # Service Documentation
+        self.config = defaultdict(Page)  # Service Documentation
         self.params = dict()  # General service configuration
-        self.__default_page = self.page(methods=['GET'], description='')
         if fname:
             self.parse(fname)
 
@@ -26,12 +38,9 @@ class Documentation(object):
         :return: Documentation for path
         :rtype: namedtuple
         """
-        if path not in self.config:
-            return self.__default_page
-        else:
-            values = self.config[path]
-            page = self.page(**values)
-            return page
+
+        page = self.config[path]
+        return page
 
     def parse(self, fname):
         if not fname:
@@ -39,26 +48,20 @@ class Documentation(object):
             return
         with open(fname) as cfg_file:
             for line in cfg_file:
-                if not line:  # if line is empty we can ignore it
+                if not line.strip():  # if line is empty we can ignore it
                     continue
                 if line.startswith(':'):  # it's a parameter
                     key, value = line[1:].split(':', maxsplit=1)
                     self.params[key] = value.strip()
                     continue
+
                 if not line[0].isspace():  # if the first char isn't whitespace then it should
                                            # be rule
                     method, url = line.split()
-                    if url not in self.config:
-                        self.config[url] = self.new_page()
-                    self.config[url]['methods'].append(method)
+                    self.config[url].methods.append(method)
                 else:
-                    continue
+                    self.config[url].description += line.strip()
 
-    def new_page(self):
-        page = dict()
-        page['methods'] = list()
-        page['description'] = ''
-        return page
 
 class Node(object):
     def __init__(self, url, session=None, documentation={}):
@@ -70,7 +73,6 @@ class Node(object):
         #Documentation related stuff
         self.__documentation = documentation  # full_documentation
         self.__doc_page = documentation[self.__path]  # 'page' relative to this path
-        self.__default_method = self.__doc_page.methods[0]
 
     def __getattr__(self, name):
         """
@@ -126,7 +128,7 @@ class Node(object):
 
         # if method is not specified use the default from the documentation file
         # or GET if it's not documented
-        __method = __method if __method else self.__default_method
+        __method = __method if __method else self.__doc_page.default_method
 
         if __method == "GET":
             method = self.__session.get
@@ -187,5 +189,6 @@ class Service(Node):
         super(Service, self).__init__(url, requests.Session(), doc)
 
 
+#todo: move everything to folder, separate documentation and service
 #TODO: Add documentation to the method (implies replacing simple method in the list with a dict)
 #TODO: Optional parts of the url on documentation (like reddit API)
