@@ -5,7 +5,6 @@ import urllib.parse
 
 
 class Page(object):
-    #todo move nametuple and dict to this object
     def __init__(self):
         self.methods = []
         self.description = ''
@@ -18,6 +17,7 @@ class Page(object):
         :rtype: str
         """
         return self.methods[0] if self.methods else 'GET'
+
 
 class Documentation(object):
     """
@@ -34,7 +34,7 @@ class Documentation(object):
         """
         Returns documentation for path, with helpful defaults.
 
-        :param item: Path
+        :param path: Path
         :return: Documentation for path
         :rtype: namedtuple
         """
@@ -61,6 +61,16 @@ class Documentation(object):
                     self.config[url].methods.append(method)
                 else:
                     self.config[url].description += line.strip()
+
+    @staticmethod
+    def help(node):
+        """
+        Prints Node help
+        :param node: Node to inspect
+        """
+        page = node._Node__doc_page # We need to access to the private property to get
+                                    # the documentation
+        print(page.description)
 
 
 class Node(object):
