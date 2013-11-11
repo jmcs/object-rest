@@ -187,6 +187,5 @@ class Service(Node):
         super(Service, self).__init__(url, requests.Session(), doc)
 
 
-#TODO: Documentation singleton
 #TODO: Add documentation to the method (implies replacing simple method in the list with a dict)
 #TODO: Optional parts of the url on documentation (like reddit API)
