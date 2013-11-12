@@ -1,4 +1,5 @@
 :URL: http://127.0.0.1:5000
+:HEADERS:{"User-Agent":"test"}
 
 GET /test
     You can document the service and use the documentation file as a config file for object_rest.
@@ -7,7 +8,7 @@ POST /test
     GET is the default for /test because it appears first.
 
 POST /test/abc
-    :header: {"x_test":"abc"}
+    :HEADERS: {"x_test":"abc", "User-Agent":"super_special"}
     Method documentation starts with a line with the method and path followed by lines started with
     whitespace with a description.
 

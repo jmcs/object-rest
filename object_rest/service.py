@@ -67,16 +67,19 @@ class Node(object):
 
     def __call__(self, __method=None, **kwargs):
 
+        rule = self.__doc_page
+
         # if method is not specified use the default from the documentation file
         # or GET if it's not documented
-        __method = __method if __method else self.__doc_page.method
+        __method = __method if __method else rule.method
 
         if __method == "GET":
             method = self.__session.get
         elif __method == "POST":
             method = self.__session.post
 
-        response = method(self.__url, params=kwargs)
+        headers = rule.parameters["HEADERS"] if "HEADERS" in rule.parameters else {}
+        response = method(self.__url, params=kwargs, headers=headers)
 
         try:
             return json.loads(response.content.decode("utf-8"))

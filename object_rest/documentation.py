@@ -1,4 +1,5 @@
 from collections import defaultdict
+import copy
 import fnmatch
 import json
 
@@ -9,16 +10,33 @@ class Rule(object):
         self.path = path
         self.description = []
         self.defaults = default_parameters
-        self.parameters = dict()
+        self.params = dict()  # local parameters
 
     def __str__(self):
         s = "{method} {path}\n".format(method=self.method, path=self.path)
-        for key, value in self.parameters.items():
+        for key, value in self.params.items():
             s += "    :{key}: {value}\n".format(key=key, value=value)
         for line in self.description:
             s += "    {line}\n".format(line=line)
         return s
 
+    @property
+    def parameters(self):
+        """
+        Returns a dict with the default_values updated by local parameters
+
+        :return: Parameter dictionary
+        """
+        parameters = copy.deepcopy(self.defaults)  # copy default values to parameters
+
+        for key, value in self.params.items():
+            if key in parameters and isinstance(value, dict):
+                # if parameter already exists and is a dict it should be updated and not replaced
+                parameters[key].update(value)
+            else:
+                parameters[key] = value
+
+        return parameters
 
 class Documentation(object):
     """
@@ -79,14 +97,14 @@ class Documentation(object):
                     line = line.strip()
                     if line.startswith(":"):  # it's a local parameter
                         key, value = Documentation._parse_param(line)
-                        page.parameters[key] = value
+                        page.params[key] = value
                     else:
                         page.description.append(line)
         return rules, parameters
 
     @staticmethod
     def _parse_param(line):
-            json_params = ['HEADER']  # this parameters have json values
+            json_params = ['HEADERS']  # this parameters have json values
 
             line = line[1:]  # discard the first ":"
             key, value = line.split(':', maxsplit=1)
@@ -110,5 +128,3 @@ def help(node):
     rules = documentation.rules_for_path(path)
     for rule in rules:
         print(rule)
-
-#TODO: add header parameter

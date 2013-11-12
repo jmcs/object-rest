@@ -7,7 +7,8 @@ app = flask.Flask(__name__)
 def catch_all(path):
     values = {'path': path,
               'method': flask.request.method,
-              'values': flask.request.args}
+              'values': flask.request.args,
+              'headers': dict(flask.request.headers)}
     return flask.json.jsonify(values)
 
 if __name__ == '__main__':
