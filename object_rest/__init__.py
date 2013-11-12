@@ -1,0 +1,1 @@
+from object_rest.service import Service
