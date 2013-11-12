@@ -69,7 +69,7 @@ class Node(object):
 
         # if method is not specified use the default from the documentation file
         # or GET if it's not documented
-        __method = __method if __method else self.__doc_page.default_method
+        __method = __method if __method else self.__doc_page.method
 
         if __method == "GET":
             method = self.__session.get
