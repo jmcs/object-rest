@@ -1,4 +1,5 @@
 from collections import defaultdict
+import fnmatch
 
 
 class Page(object):
@@ -35,9 +36,11 @@ class Documentation(object):
         :return: Documentation for path
         :rtype: namedtuple
         """
+        for rule in self.config:
+            if fnmatch.fnmatch(path, rule):
+                return self.config[rule]
 
-        page = self.config[path]
-        return page
+        return Page()
 
     def parse(self, fname):
         if not fname:
@@ -68,3 +71,5 @@ def help(node):
     # We need to access to the private property to get the documentation
     page = node._Node__doc_page
     print(page.description)
+
+#TODO: Optional parts of the url on documentation (like reddit API)

@@ -9,3 +9,6 @@ POST /test
 POST /test/abc
     Method documentation starts with a line with the method and path followed by lines started with
     whitespace with a description
+
+POST /test/*/test
+    You can use wildcards on rules to match every url that follows a pattern

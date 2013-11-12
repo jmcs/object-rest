@@ -99,7 +99,7 @@ class Node(object):
             self.__children[name] = Node(host=self.__host,
                                          path=child_path,
                                          session=self.__session,
-                                         documentation=self.__documentation,)
+                                         documentation=self.__documentation, )
         return self.__children[name]
 
     def __put(self, key, value):
@@ -135,6 +135,4 @@ class Service(Node):
                                       documentation=doc)
 
 
-        #todo: move everything to folder, separate documentation and service
-        #TODO: Add documentation to the method (implies replacing simple method in the list with a dict)
-        #TODO: Optional parts of the url on documentation (like reddit API)
+#TODO: Error handling
