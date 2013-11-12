@@ -1,25 +1,25 @@
 import requests
 import json
-import urllib.parse
 from object_rest.documentation import Documentation
 
 
 class Node(object):
-    def __init__(self, url, session=None, documentation={}):
+    def __init__(self, host, path, session=None, documentation={}):
         self.__children = dict()
-        self.__url = url
+        self.__host = host
+        self.__url = host + path
         self.__session = session
-        self.__path = urllib.parse.urlparse(url).path
+        self.__path = path
 
         #Documentation related stuff
         self.__documentation = documentation  # full_documentation
-        self.__doc_page = documentation[self.__path]  # 'page' relative to this path
+        self.__doc_page = documentation[path]  # "page" relative to this path
 
     def __getattr__(self, name):
         """
         Get child node as attribute.
         For example abc.def would correspond to the URLS abc/def.
-        An '_' prefix can be used to access some URLs that would be otherwise be invalid like
+        An "_" prefix can be used to access some URLs that would be otherwise be invalid like
         numbers.
 
         :param name: Node name
@@ -27,7 +27,7 @@ class Node(object):
         :return: Node
         :rtype: Node
         """
-        name = name.lstrip('_')
+        name = name.lstrip("_")
         return self.__get_child(name)
 
     def __setitem__(self, key, value):
@@ -61,8 +61,8 @@ class Node(object):
         :type value: dict
         :return: None
         """
-        if not key.startswith('_Node__'):
-            key = key.lstrip('_')
+        if not key.startswith("_Node__"):
+            key = key.lstrip("_")
         self.__put(key, value)
 
     def __call__(self, __method=None, **kwargs):
@@ -79,7 +79,7 @@ class Node(object):
         response = method(self.__url, params=kwargs)
 
         try:
-            return json.loads(response.content.decode('utf-8'))
+            return json.loads(response.content.decode("utf-8"))
         except ValueError:
             return response.text
 
@@ -95,8 +95,11 @@ class Node(object):
         """
 
         if name not in self.__children:
-            child_url = "{base_url}/{name}".format(base_url=self.__url, name=name)
-            self.__children[name] = Node(child_url, self.__session, self.__documentation)
+            child_path = "/".join([self.__path, name])
+            self.__children[name] = Node(host=self.__host,
+                                         path=child_path,
+                                         session=self.__session,
+                                         documentation=self.__documentation,)
         return self.__children[name]
 
     def __put(self, key, value):
@@ -110,7 +113,7 @@ class Node(object):
         :return: None
         """
 
-        if key.startswith('_Node__'):  # if it's a private variable
+        if key.startswith("_Node__"):  # if it"s a private variable
             self.__dict__[key] = value
         else:
             child_url = "{base_url}/{name}".format(base_url=self.__url, name=key)
@@ -118,15 +121,18 @@ class Node(object):
 
 
 class Service(Node):
-    def __init__(self, url=None, documentation=None):
+    def __init__(self, host=None, documentation=None):
         session = requests.Session()
-        session.headers = {'user-agent': 'object_rest.py', }
+        session.headers = {"user-agent": "object_rest.py", }
         doc = Documentation(documentation)
         try:
-            url = url if url else doc.params['URL']
+            host = host if host else doc.params["URL"]
         except KeyError:
-            raise TypeError('No URL defined')
-        super(Service, self).__init__(url, requests.Session(), doc)
+            raise TypeError("No URL defined")
+        super(Service, self).__init__(host=host,
+                                      path="",
+                                      session=requests.Session(),
+                                      documentation=doc)
 
 
         #todo: move everything to folder, separate documentation and service
