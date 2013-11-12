@@ -1,15 +1,20 @@
 from collections import defaultdict
 import fnmatch
+import json
 
 
 class Rule(object):
-    def __init__(self, method="GET", path=None):
+    def __init__(self, method="GET", path=None, default_parameters={}):
         self.method = method
         self.path = path
         self.description = []
+        self.defaults = default_parameters
+        self.parameters = dict()
 
     def __str__(self):
         s = "{method} {path}\n".format(method=self.method, path=self.path)
+        for key, value in self.parameters.items():
+            s += "    :{key}: {value}\n".format(key=key, value=value)
         for line in self.description:
             s += "    {line}\n".format(line=line)
         return s
@@ -21,8 +26,7 @@ class Documentation(object):
     """
 
     def __init__(self, fname=None):
-        self.params = dict()  # General service configuration
-        self.rules = self.parse(fname)
+        self.rules, self.params = self.parse(fname)
 
 
     def __getitem__(self, path):
@@ -39,7 +43,7 @@ class Documentation(object):
             if fnmatch.fnmatch(path, rule.path):
                 return rule
 
-        return Rule(method="GET", path=path)
+        return Rule(method="GET", path=path, default_parameters=self.params)
 
     def rules_for_path(self, path):
         """
@@ -48,32 +52,52 @@ class Documentation(object):
         return [rule for rule in self.rules if fnmatch.fnmatch(path, rule.path)]
 
     def parse(self, fname):
-        if not fname:
-            #If there is no config file return with empty config
-            return []
 
         rules = []
+        parameters = {}
+
+        if not fname:
+            #If there is no config file return with empty rule set and parameters
+            return rules, parameters
 
         with open(fname) as cfg_file:
             for line in cfg_file:
                 if not line.strip():  # if line is empty we can ignore it
                     continue
                 if line.startswith(":"):  # it's a parameter
-                    key, value = line[1:].split(':', maxsplit=1)
-                    self.params[key] = value.strip()
+                    key, value = Documentation._parse_param(line)
+                    parameters[key] = value
                     continue
 
                 if not line[0].isspace():
                     # if the first char isn't whitespace then it should be the start of a rule
 
                     method, url = line.split()
-                    page = Rule(method, url)
+                    page = Rule(method=method, path=url, default_parameters=parameters)
                     rules.append(page)
                 else:
-                    page.description.append(line.strip())
-        return rules
+                    line = line.strip()
+                    if line.startswith(":"):  # it's a local parameter
+                        key, value = Documentation._parse_param(line)
+                        page.parameters[key] = value
+                    else:
+                        page.description.append(line)
+        return rules, parameters
 
+    @staticmethod
+    def _parse_param(line):
+            json_params = ['HEADER']  # this parameters have json values
 
+            line = line[1:]  # discard the first ":"
+            key, value = line.split(':', maxsplit=1)
+            key = key.upper()  # headers should be case insensitive
+
+            if key in json_params:
+                value = json.loads(value)
+            else:
+                value = value.strip()
+
+            return key, value
 def help(node):
     """
     Prints Node help

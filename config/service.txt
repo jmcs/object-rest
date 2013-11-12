@@ -7,6 +7,7 @@ POST /test
     GET is the default for /test because it appears first.
 
 POST /test/abc
+    :header: {"x_test":"abc"}
     Method documentation starts with a line with the method and path followed by lines started with
     whitespace with a description.
 
