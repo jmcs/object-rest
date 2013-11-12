@@ -1,14 +1,14 @@
 :URL: http://127.0.0.1:5000
 
 GET /test
-    You can document the service and use the documentation file as a config file for object_rest
+    You can document the service and use the documentation file as a config file for object_rest.
 
 POST /test
-    GET is the default for /test because it appears first
+    GET is the default for /test because it appears first.
 
 POST /test/abc
     Method documentation starts with a line with the method and path followed by lines started with
-    whitespace with a description
+    whitespace with a description.
 
 POST /test/*/test
     You can use wildcards on rules to match every url that follows a pattern

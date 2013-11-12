@@ -6,7 +6,13 @@ class Rule(object):
     def __init__(self, method="GET", path=None):
         self.method = method
         self.path = path
-        self.description = ""
+        self.description = []
+
+    def __str__(self):
+        s = "{method} {path}\n".format(method=self.method, path=self.path)
+        for line in self.description:
+            s += "    {line}\n".format(line=line)
+        return s
 
 
 class Documentation(object):
@@ -35,6 +41,12 @@ class Documentation(object):
 
         return Rule(method="GET", path=path)
 
+    def rules_for_path(self, path):
+        """
+        Return all the rules that match a path
+        """
+        return [rule for rule in self.rules if fnmatch.fnmatch(path, rule.path)]
+
     def parse(self, fname):
         if not fname:
             #If there is no config file return with empty config
@@ -58,17 +70,21 @@ class Documentation(object):
                     page = Rule(method, url)
                     rules.append(page)
                 else:
-                    page.description += line.strip()
+                    page.description.append(line.strip())
         return rules
+
 
 def help(node):
     """
     Prints Node help
     :param node: Node to inspect
+    :type node: object_rest.Node
     """
     # We need to access to the private property to get the documentation
-    page = node._Node__doc_page
-    print(page.description)
+    documentation = node._Node__documentation
+    path = node._Node__path
+    rules = documentation.rules_for_path(path)
+    for rule in rules:
+        print(rule)
 
-#TODO: Optional parts of the url on documentation (like reddit API)
 #TODO: add header parameter
