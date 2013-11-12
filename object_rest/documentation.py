@@ -59,12 +59,12 @@ class Documentation(object):
                 else:
                     self.config[url].description += line.strip()
 
-    @staticmethod
-    def help(node):
-        """
-        Prints Node help
-        :param node: Node to inspect
-        """
-        page = node._Node__doc_page # We need to access to the private property to get
-        # the documentation
-        print(page.description)
+
+def help(node):
+    """
+    Prints Node help
+    :param node: Node to inspect
+    """
+    # We need to access to the private property to get the documentation
+    page = node._Node__doc_page
+    print(page.description)
